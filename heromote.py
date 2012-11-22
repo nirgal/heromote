@@ -72,9 +72,9 @@ CAMERA_PARAMETERS = {
             1: 'On',
             },
         },
-    'ST': { # Name is a guess
-        'txt': 'Automatic shutdown',
-        'perm': GP_PARAM_READ,
+    'AO': {
+        'txt': 'Auto poweroff',
+        'perm': GP_PARAM_READ | GP_PARAM_WRITE,
         'values': {
             0: 'Never',
             1: '60 s',
@@ -132,7 +132,7 @@ CAMERA_PARAMETERS = {
         'perm': GP_PARAM_READ,
         },
     'BS': {
-        'txt': 'Sound',
+        'txt': 'Beep sound',
         'perm': GP_PARAM_READ | GP_PARAM_WRITE,
         'values': {
             0: 'Off',
@@ -243,7 +243,7 @@ CAMERA_PARAMETERS = {
         # time set: TM?p=%0c%0b%14%16%23%32 (yMDhms) \00+yMDhms
         },
     'AI': {
-        'txt': 'Unkown AI parameter',
+        'txt': 'Unkown AI parameter (audio input?)',
         'perm': GP_PARAM_WRITE,
         'values': {
             0: 'Unknown value 0',
@@ -255,18 +255,8 @@ CAMERA_PARAMETERS = {
             6: 'Unknown value 6',
             },
         },
-    'AO': {
-        'txt': 'Unkown AO parameter',
-        'perm': GP_PARAM_WRITE,
-        'values': {
-            0: 'Unknown value 0',
-            1: 'Unknown value 1',
-            2: 'Unknown value 2',
-            3: 'Unknown value 3',
-            },
-        },
     'MM': {
-        'txt': 'Unkown MM parameter',
+        'txt': 'Unkown MM parameter', # mic mode ?
         'perm': GP_PARAM_WRITE,
         'values': {
             0: 'Unknown value 0',
@@ -282,20 +272,20 @@ CAMERA_PARAMETERS = {
         'perm': GP_PARAM_WRITE,
         },
     'OB': {
-        'txt': 'Unkown OB parameter',
+        'txt': 'One button mode',
         'perm': GP_PARAM_WRITE,
         'values': {
-            0: 'Unknown value 0',
-            1: 'Unknown value 1',
+            0: 'Off',
+            1: 'On',
             },
         },
     #PB...
     #DF... delete file?
     #IF
-    #WI -> 0 disables wifi.
+    #WI -> 0 disables wifi. can be sent to either /bacac or /camera
     #BM -> 0, 1 or 2
     #PM
-    #BO
+    #BO -> /bacpac 0=off
     #OO
     #BP
     #SP
@@ -394,7 +384,7 @@ def dump_camera():
         return
     #print("camera SE: ", repr(cse))
     decoded_cse = struct.unpack('>BBBBBBBBBBBBBBBBBBBBBhhhhBB', cse)
-    pad0, mode, pad1, default_mode, spot, time_lapse, autoshutdown, video_fov, photo_res, video_res, pad2, pad3, disp_hour, disp_min, disp_sec, pad7, sound, led, flags, battery, pad8, remaining_photo, nphoto, remaining_video_min, nvideo, shoot, pada = decoded_cse
+    pad0, mode, pad1, default_mode, spot, time_lapse, autooff, video_fov, photo_res, video_res, pad2, pad3, disp_hour, disp_min, disp_sec, pad7, sound, led, flags, battery, pad8, remaining_photo, nphoto, remaining_video_min, nvideo, shoot, pada = decoded_cse
     assert pad0 == 0
     assert pad3 == 255
     preview = bool(flags & 0x01)
@@ -427,7 +417,7 @@ def dump_camera():
     print_reg('DM', default_mode)
     print_reg('TI', time_lapse)
     print_reg('EX', spot)
-    print_reg('ST', autoshutdown)
+    print_reg('AO', autooff)
     print_reg('FV', video_fov)
     print_reg('PR', photo_res)
     print ('pad2 (audio):', pad2)
@@ -482,9 +472,9 @@ def main():
         dump_camera()
     elif args[0] == 'monitor':
         while True:
-            #dump_bacpac()
+            dump_bacpac()
             dump_camera()
-            #sleep(1)
+            sleep(1)
     else:
         command = args[0].split('=', 1)
         assert(len(command) == 2)
