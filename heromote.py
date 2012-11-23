@@ -487,15 +487,17 @@ def main():
             for reg_name in CAMERA_PARAMETERS:
                 reg = CAMERA_PARAMETERS[reg_name]
                 print(perm_to_text(reg), reg_name, reg['txt'])
+            print()
+            print('Use list RR to get possible values')
         else:
             for reg_name in args[1:]:
                 reg = CAMERA_PARAMETERS[reg_name]
                 if reg['perm'] == GP_PARAM_READ:
-                    txtperm = 'READONLY'
+                    txtperm = 'READ-ONLY'
                 elif reg['perm'] == GP_PARAM_WRITE:
-                    txtperm = 'READONLY'
+                    txtperm = 'WRITE-ONLY'
                 elif reg['perm'] == GP_PARAM_READ | GP_PARAM_WRITE:
-                    txtperm = 'READ+WRITE'
+                    txtperm = 'READ/WRITE'
                 else:
                     txtperm = ''
                 print(reg_name, ':', reg['txt'], '(', txtperm, ')')
