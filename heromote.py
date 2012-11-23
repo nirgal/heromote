@@ -452,15 +452,19 @@ def dump_camera():
     cpad0, mode, cpad1, default_mode, spot, time_lapse, autooff, video_fov, photo_res, video_res, cpad2, cpad3, disp_hour, disp_min, disp_sec, cpad7, sound, led, flags, battery, cpad8, remaining_photo, nphoto, remaining_video_min, nvideo, shoot, cpada = decoded_cse
     assert cpad0 == 0
     assert cpad3 == 255
-    preview = bool(flags & 0x01)
-    updown = bool(flags & 0x04)
-    osd = bool(flags & 0x10)
-    pal = bool(flags & 0x20) 
-    locate = bool(flags & 0x40) 
-    usb = bool(flags & 0x80)
+
+    preview = int(bool(flags & 0x01)) * 2 # hence 0 or 2
     assert flags & 0x06 == 0
+    updown = int(bool(flags & 0x04))
+    osd = int(bool(flags & 0x10))
+    pal = int(bool(flags & 0x20))
+    locate = int(bool(flags & 0x40)) 
+    usb = int(bool(flags & 0x80))
+
     charging = bool(battery & 0x80)
     battery = battery & 0x7F
+
+    protune = int(bool(video_res & 7))
 
     print_reg('CM', mode)
     print ('r- cpad1 (audio):', cpad1)
@@ -498,7 +502,7 @@ def dump_camera():
 
 def main():
     from optparse import OptionParser
-    parser = OptionParser(usage='%prog [options] { dump | monitor | list [RR] | {RR=value}+ }')
+    parser = OptionParser(usage='%prog [options] { dump | monitor | list [RR] | {RR[=value]}+ }')
     parser.add_option('-t', '--target',
         action='store', dest='target', default='auto',
         help='Specifiy where to send command. Default=auto. Allowed values=auto,camera,bacpac')
@@ -546,23 +550,30 @@ def main():
  
     for arg in args:
         command = arg.split('=', 1)
-        assert(len(command) == 2)
+        if len(command) == 1:
+            command.append(None)
         reg_name, value = command
+        if reg_name not in CAMERA_PARAMETERS:
+            print ("Warning: unknown command", reg_name, file=sys.stderr)
         print (reg_name, '<-', value)
-        value = int(value)
-        assert value < 256
+        
         target = options.target
         if target == 'auto':
             if reg_name not in CAMERA_PARAMETERS or 'write_target' not in CAMERA_PARAMETERS[reg_name]:
                 print('You need to specify target with -t parameter for unknown parameters', file=sys.stderr)
                 sys.exit(1)
             target = CAMERA_PARAMETERS[reg_name]['write_target']
-        url = 'http://10.5.5.9/' + target + '/'+ reg_name + '?t=' + PASSWORD + '&p=%' + '%02x' % value
+
+        url = 'http://10.5.5.9/' + target + '/'+ reg_name + '?t=' + PASSWORD
+        if value:
+            value = int(value)
+            assert value < 256
+            url += '&p=%' + '%02x' % value
         print (url)
+
         rsp = httpopen(url).read()
         print ("HTTP response:", rsp)
         print_reg(reg_name, value)
-
 
 
 if __name__ == '__main__':
