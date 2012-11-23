@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# heromote - remotely control gopro here cameras
+# heromote - remotely control gopro hero cameras
 # Copyright (C) 2012 Jean-Michel Vourgère
 # 
 # This program is free software: you can redistribute it and/or modify
@@ -31,6 +31,7 @@ CAMERA_PARAMETERS = {
     'CM': {
         'txt': 'Camera mode',
         'perm': GP_PARAM_READ | GP_PARAM_WRITE,
+        'write_target': 'camera',
         'values': {
             0: 'Video',
             1: 'Photo',
@@ -44,6 +45,7 @@ CAMERA_PARAMETERS = {
     'DM': {
         'txt': 'Default mode',
         'perm': GP_PARAM_READ | GP_PARAM_WRITE,
+        'write_target': 'camera',
         'values': {
             0: 'Video',
             1: 'Photo',
@@ -54,6 +56,7 @@ CAMERA_PARAMETERS = {
     'TI': {
         'txt': 'Time lapse',
         'perm': GP_PARAM_READ | GP_PARAM_WRITE,
+        'write_target': 'camera',
         'values': {
             0: '0.5 s',
             1: '1 s',
@@ -67,6 +70,7 @@ CAMERA_PARAMETERS = {
     'EX': {
         'txt': 'Spot',
         'perm': GP_PARAM_READ | GP_PARAM_WRITE,
+        'write_target': 'camera',
         'values': {
             0: 'Off',
             1: 'On',
@@ -75,6 +79,7 @@ CAMERA_PARAMETERS = {
     'AO': {
         'txt': 'Auto poweroff',
         'perm': GP_PARAM_READ | GP_PARAM_WRITE,
+        'write_target': 'camera',
         'values': {
             0: 'Never',
             1: '60 s',
@@ -85,6 +90,7 @@ CAMERA_PARAMETERS = {
     'FV': {
         'txt': '1080p field of view',
         'perm': GP_PARAM_READ | GP_PARAM_WRITE,
+        'write_target': 'camera',
         'values': {
             0: 'Wide',
             1: 'Medium',
@@ -94,6 +100,7 @@ CAMERA_PARAMETERS = {
     'PR': {
         'txt': 'Photo resolution',
         'perm': GP_PARAM_READ | GP_PARAM_WRITE,
+        'write_target': 'camera',
         'values': {
             0: '11MP wide',
             1: '8MP medium',
@@ -104,6 +111,7 @@ CAMERA_PARAMETERS = {
     'VR': {
         'txt': 'Video resolution',
         'perm': GP_PARAM_READ | GP_PARAM_WRITE,
+        'write_target': 'camera',
         'values': {
             0: 'WVGA 50',
             1: 'WVGA 100',
@@ -134,6 +142,7 @@ CAMERA_PARAMETERS = {
     'BS': {
         'txt': 'Beep sound',
         'perm': GP_PARAM_READ | GP_PARAM_WRITE,
+        'write_target': 'camera',
         'values': {
             0: 'Off',
             1: '70%',
@@ -143,6 +152,7 @@ CAMERA_PARAMETERS = {
     'LB': {
         'txt': 'Led blinking',
         'perm': GP_PARAM_READ | GP_PARAM_WRITE,
+        'write_target': 'camera',
         'values': {
             0: 'Off',
             1: '2',
@@ -152,6 +162,7 @@ CAMERA_PARAMETERS = {
     'PV': {
         'txt': 'Preview',
         'perm': GP_PARAM_READ | GP_PARAM_WRITE,
+        'write_target': 'camera',
         'values': {
             0: 'Off',
             1: 'Unknown',
@@ -162,6 +173,7 @@ CAMERA_PARAMETERS = {
     'UP': {
         'txt': 'Upside Down',
         'perm': GP_PARAM_READ | GP_PARAM_WRITE,
+        'write_target': 'camera',
         'values': {
             0: 'Off',
             1: 'On',
@@ -178,6 +190,7 @@ CAMERA_PARAMETERS = {
     'VM': {
         'txt': 'PAL',
         'perm': GP_PARAM_READ | GP_PARAM_WRITE,
+        'write_target': 'camera',
         'values': {
             0: 'Off',
             1: 'On',
@@ -186,6 +199,7 @@ CAMERA_PARAMETERS = {
     'LL': {
         'txt': 'Locate',
         'perm': GP_PARAM_READ | GP_PARAM_WRITE,
+        'write_target': 'camera',
         'values': {
             0: 'Off',
             1: 'On',
@@ -210,6 +224,7 @@ CAMERA_PARAMETERS = {
     'SH': {
         'txt': 'Shoot',
         'perm': GP_PARAM_READ | GP_PARAM_WRITE,
+        'write_target': 'camera',
         'values': {
             0: 'Off',
             1: 'On',
@@ -234,19 +249,23 @@ CAMERA_PARAMETERS = {
     'DL': {
         'txt': 'Delete last',
         'perm': GP_PARAM_WRITE,
+        'write_target': 'camera',
         },
     'DA': {
         'txt': 'Delete all',
         'perm': GP_PARAM_WRITE,
+        'write_target': 'camera',
         },
     'TM': {
         'txt': 'Date/Time',
         'perm': GP_PARAM_WRITE,
+        'write_target': 'camera',
         # time set: TM?p=%0c%0b%14%16%23%32 (yMDhms) \00+yMDhms
         },
     'AI': {
         'txt': 'Unkown AI parameter (audio input?)',
         'perm': GP_PARAM_WRITE,
+        'write_target': 'camera',
         'values': {
             0: 'Unknown value 0',
             1: 'Unknown value 1',
@@ -260,6 +279,7 @@ CAMERA_PARAMETERS = {
     'MM': {
         'txt': 'Unkown MM parameter', # mic mode ?
         'perm': GP_PARAM_WRITE,
+        'write_target': 'camera',
         'values': {
             0: 'Unknown value 0',
             1: 'Unknown value 1',
@@ -268,14 +288,26 @@ CAMERA_PARAMETERS = {
     'PI': { # Ping cam ?
         'txt': 'Unkown PI parameter',
         'perm': GP_PARAM_WRITE,
+        'write_target': 'camera',
         },
     'CN': { # Change camera name
         'txt': 'Unkown CN parameter',
         'perm': GP_PARAM_WRITE,
+        'write_target': 'camera',
         },
     'OB': {
         'txt': 'One button mode',
         'perm': GP_PARAM_WRITE,
+        'write_target': 'camera',
+        'values': {
+            0: 'Off',
+            1: 'On',
+            },
+        },
+    'PT': {
+        'txt': 'ProTune mode',
+        'perm': GP_PARAM_WRITE,
+        'write_target': 'camera',
         'values': {
             0: 'Off',
             1: 'On',
@@ -300,6 +332,7 @@ CAMERA_PARAMETERS = {
     'PW': {
         'txt': 'Camera power',
         'perm': GP_PARAM_WRITE,
+        'write_target': 'bacpac',
         'values': {
             0: 'Off',
             1: 'On',
@@ -520,10 +553,10 @@ def main():
         assert value < 256
         target = options.target
         if target == 'auto':
-            if reg_name in ('PW', 'WI', 'BM'): # sent to the bacpac, not the camera
-                target = 'bacpac'
-            else:
-                target = 'camera'
+            if reg_name not in CAMERA_PARAMETERS or 'write_target' not in CAMERA_PARAMETERS[reg_name]:
+                print('You need to specify target with -t parameter for unknown parameters', file=sys.stderr)
+                sys.exit(1)
+            target = CAMERA_PARAMETERS[reg_name]['write_target']
         url = 'http://10.5.5.9/' + target + '/'+ reg_name + '?t=' + PASSWORD + '&p=%' + '%02x' % value
         print (url)
         rsp = httpopen(url).read()
