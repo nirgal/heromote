@@ -156,6 +156,7 @@ CAMERA_PARAMETERS = {
             0: 'Off',
             1: 'Unknown',
             2: 'On', # ffplay "http://10.5.5.9:8080/live/amba.m3u8"
+                     # ffmpeg -i http://10.5.5.9:8080/live/amba.m3u8 -f mpegts -vcodec copy pipe:1 | mplayer -
             },
         },
     'UP': {
@@ -268,7 +269,7 @@ CAMERA_PARAMETERS = {
         'txt': 'Unkown PI parameter',
         'perm': GP_PARAM_WRITE,
         },
-    'CN': {
+    'CN': { # Change camera name
         'txt': 'Unkown CN parameter',
         'perm': GP_PARAM_WRITE,
         },
@@ -328,23 +329,23 @@ def httpopen(url):
     return http_response
 
 
-bcv = httpopen('http://10.5.5.9/bacpac/cv').read()
-print('bacpac CV:', repr(bcv))
-bacpac_version = struct.unpack('BBB', bcv[9:12])
-bacpac_version = '.'.join([str(x) for x in bacpac_version])
-print('bacpac version:', bacpac_version)
-bacpac_mac = bcv[12:18]
-bacpac_mac = ':'.join(['%02x' % x for x in bacpac_mac])
-print('bacpac mac:', bacpac_mac)
-bacpac_name = bcv[19:].decode('utf-8')
-print('bacpac name:', bacpac_name)
-
-bsd = httpopen('http://10.5.5.9/bacpac/sd').read()
-print('bacpac SD:', repr(bsd))
-PASSWORD = bsd[2:].decode('utf-8')
-print('bacpac password', PASSWORD)
- 
 try:
+    bcv = httpopen('http://10.5.5.9/bacpac/cv').read()
+    print('bacpac CV:', repr(bcv))
+    bacpac_version = struct.unpack('BBB', bcv[9:12])
+    bacpac_version = '.'.join([str(x) for x in bacpac_version])
+    print('bacpac version:', bacpac_version)
+    bacpac_mac = bcv[12:18]
+    bacpac_mac = ':'.join(['%02x' % x for x in bacpac_mac])
+    print('bacpac mac:', bacpac_mac)
+    bacpac_name = bcv[19:].decode('utf-8')
+    print('bacpac name:', bacpac_name)
+    
+    bsd = httpopen('http://10.5.5.9/bacpac/sd').read()
+    print('bacpac SD:', repr(bsd))
+    PASSWORD = bsd[2:].decode('utf-8')
+    print('bacpac password', PASSWORD)
+ 
     ccv = httpopen('http://10.5.5.9/camera/cv').read()
     print('camera CV:', repr(ccv))
     # b'\x00\x00\x01\x13HD2.08.12.198.47.00\x05HERO2'
@@ -357,7 +358,7 @@ try:
     camera_model = ccv[ipos:ipos+dlen].decode('UTF-8')
     print('camera_model', camera_model)
 except urllib.error.HTTPError:
-    print('Error communicating with camera')
+    print('Error communicating with bacpac/camera')
 
 
 def perm_to_text(reg):
@@ -372,8 +373,8 @@ def print_reg(name, value):
     else:
         disp_value = '%s' % value
     print ('%s %s (%s): %s' % (
-        name,
         perm_to_text(cam_reg),
+        name,
         cam_reg['txt'],
         disp_value,
         ))
@@ -381,28 +382,28 @@ def print_reg(name, value):
 def dump_bacpac():
     bse = httpopen('http://10.5.5.9/bacpac/se?t=%s' % PASSWORD).read()
     print("bacpac SE:", repr(bse))
-    pad0, bacpac_battery, pad1, pad2, pad3, pad4, pad5, pad6, pad7, pad8, pad9, pada, padb, padc, padd, pade = struct.unpack('BbBBBBBBBBBBBBBB', bse)
-    assert pad0 == 0
+    bpad0, bacpac_battery, bpad1, bpad2, bpad3, bpad4, bpad5, bpad6, bpad7, bpad8, bpad9, bpada, bpadb, bpadc, bpadd, bpade = struct.unpack('BbBBBBBBBBBBBBBB', bse)
+    assert bpad0 == 0
     if bacpac_battery == -1:
         print("bacpac battery: charging")
     elif bacpac_battery == -2:
         print("bacpac battery: using camera power")
     else:
         print('bacpac battery:', bacpac_battery, '%')
-    print ('pad1:', pad1)
-    print ('pad2:', pad2)
-    print ('pad3:', pad3)
-    print ('pad4:', pad4)
-    print ('pad5:', pad5)
-    print ('pad6:', pad6)
-    print ('pad7:', pad7)
-    print ('pad8:', pad8)
-    print ('pad9:', pad9)
-    print ('pada:', pada)
-    print ('padb:', padb)
-    print ('padc:', padc)
-    print ('Cam attached:', padd)
-    print ('pade:', pade)
+    print ('r- bpad1:', bpad1)
+    print ('r- bpad2:', bpad2)
+    print ('r- bpad3:', bpad3)
+    print ('r- bpad4:', bpad4)
+    print ('r- bpad5:', bpad5)
+    print ('r- bpad6:', bpad6)
+    print ('r- bpad7:', bpad7)
+    print ('r- bpad8:', bpad8)
+    print ('r- bpad9:', bpad9)
+    print ('r- bpada:', bpada)
+    print ('r- bpadb:', bpadb)
+    print ('r- bpadc:', bpadc)
+    print ('r- cam_attached:', bpadd)
+    print ('r- bpade:', bpade)
     #cam off:               6:0 7:0  8:0 9:1 a:0 b:255 c:255 e:0
     #usb mode only, cam on: 6:0 7:0  8:1 9:0 a:1 b:1   c:0   e:0
     #cam fully on:          6:0 7:34 8:1 9:0 a:1 b:1   c:0   e:1
@@ -415,9 +416,9 @@ def dump_camera():
         return
     #print("camera SE: ", repr(cse))
     decoded_cse = struct.unpack('>BBBBBBBBBBBBBBBBBBBBBhhhhBB', cse)
-    pad0, mode, pad1, default_mode, spot, time_lapse, autooff, video_fov, photo_res, video_res, pad2, pad3, disp_hour, disp_min, disp_sec, pad7, sound, led, flags, battery, pad8, remaining_photo, nphoto, remaining_video_min, nvideo, shoot, pada = decoded_cse
-    assert pad0 == 0
-    assert pad3 == 255
+    cpad0, mode, cpad1, default_mode, spot, time_lapse, autooff, video_fov, photo_res, video_res, cpad2, cpad3, disp_hour, disp_min, disp_sec, cpad7, sound, led, flags, battery, cpad8, remaining_photo, nphoto, remaining_video_min, nvideo, shoot, cpada = decoded_cse
+    assert cpad0 == 0
+    assert cpad3 == 255
     preview = bool(flags & 0x01)
     updown = bool(flags & 0x04)
     osd = bool(flags & 0x10)
@@ -429,22 +430,22 @@ def dump_camera():
     battery = battery & 0x7F
 
     print_reg('CM', mode)
-    print ('pad1 (audio):', pad1)
+    print ('r- cpad1 (audio):', cpad1)
     print_reg('DM', default_mode)
     print_reg('TI', time_lapse)
     print_reg('EX', spot)
     print_reg('AO', autooff)
     print_reg('FV', video_fov)
     print_reg('PR', photo_res)
-    print ('pad2 (audio):', pad2)
+    print ('r- cpad2 (audio):', cpad2)
     print_reg('VR', video_res)
     print_reg('PH', disp_hour)
     print_reg('PM', disp_min)
     print_reg('PS', disp_sec)
-    print ('pad7 (playback):', pad7) # playback
+    print ('r- cpad7 (playback):', cpad7) # playback
     print_reg('BS', sound)
     print_reg('LB', led)
-    #print ('flag:', flags)
+    #print ('r- flag:', flags)
     print_reg('PV', preview)
     print_reg('UP', updown)
     print_reg('OS', osd)
@@ -453,13 +454,13 @@ def dump_camera():
     print_reg('US', usb)
     print_reg('BL', battery)
     print_reg('BC', charging)
-    print ('pad8:', pad8)
+    print ('r- cpad8:', cpad8)
     print_reg('RP', remaining_photo)
     print_reg('NP', nphoto)
     print_reg('RV', remaining_video_min)
     print_reg('NV', nvideo)
     print_reg('SH', shoot)
-    print_reg('ST', pada)
+    print_reg('ST', cpada)
 
 
 def main():
