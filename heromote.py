@@ -154,7 +154,8 @@ CAMERA_PARAMETERS = {
         'perm': GP_PARAM_READ | GP_PARAM_WRITE,
         'values': {
             0: 'Off',
-            1: 'On', # ffplay "http://10.5.5.9:8080/live/amba.m3u8"
+            1: 'Unknown',
+            2: 'On', # ffplay "http://10.5.5.9:8080/live/amba.m3u8"
             },
         },
     'UP': {
@@ -304,6 +305,17 @@ CAMERA_PARAMETERS = {
             2: 'Unknown',
             },
         },
+    'ST': {
+        'txt': 'Internal status',
+        'perm': GP_PARAM_READ,
+        'values': {
+            0: '0 - Setup or HD video rec (no preview)',
+            1: '1 - Busy: burst (no preview)',
+            2: '2 - Protune video recording (no preview)',
+            4: '4 - Photo or non-protune video',
+            6: '6 - Protune video',
+            },
+        },
     }
 
 
@@ -447,20 +459,12 @@ def dump_camera():
     print_reg('RV', remaining_video_min)
     print_reg('NV', nvideo)
     print_reg('SH', shoot)
-    print ('pada:', pada) # busy=1 videorec=2 PVready+pic=4 usb_only=4 video_mode=6
-    #                 4 2 1
-    # Setup/Lapse     0 0 0
-    # BusyBurst       0 0 X
-    # Video rec       0 X 0
-    # Photo/USB       X 0 0
-    # VideoOnT        X X 0
-    #amba404 -> "preview now supported"
-
+    print_reg('ST', pada)
 
 
 def main():
     from optparse import OptionParser
-    parser = OptionParser(usage='%prog [options] { dump | monitor | list [RR] | RR=value}')
+    parser = OptionParser(usage='%prog [options] { dump | monitor | list [RR] | {RR=value}+ }')
     parser.add_option('-t', '--target',
         action='store', dest='target', default='auto',
         help='Specifiy where to send command. Default=auto. Allowed values=auto,camera,bacpac')
@@ -505,24 +509,25 @@ def main():
                     for val, txt in reg['values'].items():
                         print('\t', val, ':', txt)
         return
-        
-    command = args[0].split('=', 1)
-    assert(len(command) == 2)
-    reg_name, value = command
-    print (reg_name, '<-', value)
-    value = int(value)
-    assert value < 256
-    target = options.target
-    if target == 'auto':
-        if reg_name in ('PW', 'WI', 'BM'): # sent to the bacpac, not the camera
-            target = 'bacpac'
-        else:
-            target = 'camera'
-    url = 'http://10.5.5.9/' + target + '/'+ reg_name + '?t=' + PASSWORD + '&p=%' + '%02x' % value
-    print (url)
-    rsp = httpopen(url).read()
-    print ("HTTP response:", rsp)
-    print_reg(reg_name, value)
+ 
+    for arg in args:
+        command = arg.split('=', 1)
+        assert(len(command) == 2)
+        reg_name, value = command
+        print (reg_name, '<-', value)
+        value = int(value)
+        assert value < 256
+        target = options.target
+        if target == 'auto':
+            if reg_name in ('PW', 'WI', 'BM'): # sent to the bacpac, not the camera
+                target = 'bacpac'
+            else:
+                target = 'camera'
+        url = 'http://10.5.5.9/' + target + '/'+ reg_name + '?t=' + PASSWORD + '&p=%' + '%02x' % value
+        print (url)
+        rsp = httpopen(url).read()
+        print ("HTTP response:", rsp)
+        print_reg(reg_name, value)
 
 
 
