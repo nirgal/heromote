@@ -283,7 +283,7 @@ CAMERA_PARAMETERS = {
     #DF... delete file?
     #IF
     #WI -> 0 disables wifi. can be sent to either /bacac or /camera
-    #BM -> 0, 1 or 2
+    #BM -> 0, 1 or 2  blue booth mode ? can be sent to either /bacac or /camera
     #PM
     #BO -> /bacpac 0=off
     #OO
@@ -347,6 +347,25 @@ try:
 except urllib.error.HTTPError:
     print('Error communicating with camera')
 
+
+def perm_to_text(reg):
+    read_flag = (reg['perm'] & GP_PARAM_READ) and 'r' or '-'
+    write_flag = (reg['perm'] & GP_PARAM_WRITE) and 'w' or '-'
+    return read_flag + write_flag
+
+def print_reg(name, value):
+    cam_reg = CAMERA_PARAMETERS[name]
+    if 'values' in cam_reg:
+        disp_value = '%s (%s)' % (value, cam_reg['values'][value])
+    else:
+        disp_value = '%s' % value
+    print ('%s %s (%s): %s' % (
+        name,
+        perm_to_text(cam_reg),
+        cam_reg['txt'],
+        disp_value,
+        ))
+
 def dump_bacpac():
     bse = httpopen('http://10.5.5.9/bacpac/se?t=%s' % PASSWORD).read()
     print("bacpac SE:", repr(bse))
@@ -396,21 +415,6 @@ def dump_camera():
     assert flags & 0x06 == 0
     charging = bool(battery & 0x80)
     battery = battery & 0x7F
-    def print_reg(name, value):
-        read_flag = (CAMERA_PARAMETERS[name]['perm'] & GP_PARAM_READ) and 'r' or '-'
-        write_flag = (CAMERA_PARAMETERS[name]['perm'] & GP_PARAM_WRITE) and 'w' or '-'
-        cam_reg = CAMERA_PARAMETERS[name]
-        if 'values' in cam_reg:
-            disp_value = '%s (%s)' % (value, cam_reg['values'][value])
-        else:
-            disp_value = '%s' % value
-        print ('%s %s%s (%s): %s' % (
-            name,
-            read_flag,
-            write_flag,
-            cam_reg['txt'],
-            disp_value,
-            ))
 
     print_reg('CM', mode)
     print ('pad1 (audio):', pad1)
@@ -456,7 +460,7 @@ def dump_camera():
 
 def main():
     from optparse import OptionParser
-    parser = OptionParser(usage='%prog [options] { dump | monitor | RR=value}')
+    parser = OptionParser(usage='%prog [options] { dump | monitor | list [RR] | RR=value}')
     parser.add_option('-t', '--target',
         action='store', dest='target', default='auto',
         help='Specifiy where to send command. Default=auto. Allowed values=auto,camera,bacpac')
@@ -470,28 +474,53 @@ def main():
     if args[0] == 'dump':
         dump_bacpac()
         dump_camera()
-    elif args[0] == 'monitor':
+        return
+    
+    if args[0] == 'monitor':
         while True:
             dump_bacpac()
             dump_camera()
             sleep(1)
-    else:
-        command = args[0].split('=', 1)
-        assert(len(command) == 2)
-        reg_name, value = command
-        print (reg_name, '<-', value)
-        value = int(value)
-        assert value < 256
-        target = options.target
-        if target == 'auto':
-            if reg_name in ('PW', 'WI', 'BM'): # sent to the bacpac, not the camera
-                target = 'bacpac'
-            else:
-                target = 'camera'
-        url = 'http://10.5.5.9/' + target + '/'+ reg_name + '?t=' + PASSWORD + '&p=%' + '%02x' % value
-        print (url)
-        rsp = httpopen(url).read()
-        print ("HTTP response:", rsp)
+    
+    if args[0] == 'list':
+        if len(args) == 1:
+            for reg_name in CAMERA_PARAMETERS:
+                reg = CAMERA_PARAMETERS[reg_name]
+                print(perm_to_text(reg), reg_name, reg['txt'])
+        else:
+            for reg_name in args[1:]:
+                reg = CAMERA_PARAMETERS[reg_name]
+                if reg['perm'] == GP_PARAM_READ:
+                    txtperm = 'READONLY'
+                elif reg['perm'] == GP_PARAM_WRITE:
+                    txtperm = 'READONLY'
+                elif reg['perm'] == GP_PARAM_READ | GP_PARAM_WRITE:
+                    txtperm = 'READ+WRITE'
+                else:
+                    txtperm = ''
+                print(reg_name, ':', reg['txt'], '(', txtperm, ')')
+                if 'values' in reg:
+                    for val, txt in reg['values'].items():
+                        print('\t', val, ':', txt)
+        return
+        
+    command = args[0].split('=', 1)
+    assert(len(command) == 2)
+    reg_name, value = command
+    print (reg_name, '<-', value)
+    value = int(value)
+    assert value < 256
+    target = options.target
+    if target == 'auto':
+        if reg_name in ('PW', 'WI', 'BM'): # sent to the bacpac, not the camera
+            target = 'bacpac'
+        else:
+            target = 'camera'
+    url = 'http://10.5.5.9/' + target + '/'+ reg_name + '?t=' + PASSWORD + '&p=%' + '%02x' % value
+    print (url)
+    rsp = httpopen(url).read()
+    print ("HTTP response:", rsp)
+    print_reg(reg_name, value)
 
 
 
