@@ -270,19 +270,16 @@ CAMERA_PARAMETERS = {
             0: 'Unknown value 0',
             1: 'Unknown value 1',
             2: 'Unknown value 2',
-            3: 'Unknown value 3',
-            4: 'Unknown value 4',
-            5: 'Unknown value 5',
-            6: 'Unknown value 6',
+            3: 'External mic',
             },
         },
     'MM': {
-        'txt': 'Unkown MM parameter', # mic mode ?
+        'txt': 'Microphone mode',
         'perm': GP_PARAM_WRITE,
         'write_target': 'camera',
         'values': {
-            0: 'Unknown value 0',
-            1: 'Unknown value 1',
+            0: 'Unknown value 0 (stereo?)',
+            1: 'Unknown value 1 (mono?)',
             },
         },
     'PI': { # Ping cam ?
