@@ -20,6 +20,7 @@
 import sys
 from time import sleep
 import struct
+import socket
 import urllib.request
 
 PASSWORD=None
@@ -205,7 +206,7 @@ CAMERA_PARAMETERS = {
             1: 'On',
             },
         },
-    'US': {
+    'US': { # Name is a guess
         'txt': 'USB mode',
         'perm': GP_PARAM_READ,
         'values': {
@@ -213,11 +214,11 @@ CAMERA_PARAMETERS = {
             1: 'On',
             },
         },
-    'BL': {
+    'BL': { # Name is a guess
         'txt': 'Battery level',
         'perm': GP_PARAM_READ,
         },
-    'BC': {
+    'BC': { # Name is a guess
         'txt': 'Battery charging',
         'perm': GP_PARAM_READ,
         },
@@ -336,7 +337,7 @@ CAMERA_PARAMETERS = {
             2: 'Unknown',
             },
         },
-    'ST': {
+    'ST': { # Name is a guess
         'txt': 'Internal status',
         'perm': GP_PARAM_READ,
         'values': {
@@ -346,6 +347,11 @@ CAMERA_PARAMETERS = {
             4: '4 - Photo or non-protune video',
             6: '6 - Protune video',
             },
+        },
+    'CN': {
+        'txt': 'Camera name',
+        'perm': GP_PARAM_WRITE,
+        'values': str,
         },
     }
 
@@ -364,7 +370,7 @@ try:
     print('bacpac CV:', repr(bcv))
     bacpac_version = struct.unpack('BBB', bcv[9:12])
     bacpac_version = '.'.join([str(x) for x in bacpac_version])
-    print('bacpac version:', bacpac_version)
+    print('   bacpac version:', bacpac_version)
     bacpac_mac = bcv[12:18]
     bacpac_mac = ':'.join(['%02x' % x for x in bacpac_mac])
     print('bacpac mac:', bacpac_mac)
@@ -387,7 +393,7 @@ try:
     ipos += 1
     camera_model = ccv[ipos:ipos+dlen].decode('UTF-8')
     print('camera_model', camera_model)
-except urllib.error.HTTPError:
+except (urllib.error.HTTPError, urllib.error.URLError, socket.error):
     print('Error communicating with bacpac/camera')
 
 
@@ -398,7 +404,7 @@ def perm_to_text(reg):
 
 def print_reg(name, value):
     cam_reg = CAMERA_PARAMETERS[name]
-    if 'values' in cam_reg:
+    if 'values' in cam_reg and isinstance(cam_reg['values'], dict):
         disp_value = '%s (%s)' % (value, cam_reg['values'][value])
     else:
         disp_value = '%s' % value
@@ -410,7 +416,12 @@ def print_reg(name, value):
         ))
 
 def dump_bacpac():
-    bse = httpopen('http://10.5.5.9/bacpac/se?t=%s' % PASSWORD).read()
+    try:
+        bse = httpopen('http://10.5.5.9/bacpac/se?t=%s' % PASSWORD).read()
+    except (urllib.error.HTTPError, urllib.error.URLError, socket.error):
+        print ("Can't access bacpac")
+        return
+
     print("bacpac SE:", repr(bse))
     bpad0, bacpac_battery, bpad1, bpad2, bpad3, bpad4, bpad5, bpad6, bpad7, bpad8, bpad9, bpada, bpadb, bpadc, bpadd, bpade = struct.unpack('BbBBBBBBBBBBBBBB', bse)
     assert bpad0 == 0
@@ -441,7 +452,7 @@ def dump_bacpac():
 def dump_camera():
     try:
         cse = httpopen('http://10.5.5.9/camera/se?t=%s' % PASSWORD).read()
-    except urllib.error.HTTPError:
+    except (urllib.error.HTTPError, urllib.error.URLError, socket.error):
         print ("Can't access camera")
         return
     #print("camera SE: ", repr(cse))
@@ -541,8 +552,12 @@ def main():
                     txtperm = ''
                 print(reg_name, ':', reg['txt'], '(', txtperm, ')')
                 if 'values' in reg:
-                    for val, txt in reg['values'].items():
-                        print('\t', val, ':', txt)
+                    values = reg['values']
+                    if isinstance(values, dict):
+                        for val, txt in reg['values'].items():
+                            print('\t', val, ':', txt)
+                    else:
+                        print('\t', values.__name__)
         return
  
     for arg in args:
