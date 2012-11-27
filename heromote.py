@@ -264,11 +264,11 @@ CAMERA_PARAMETERS = {
         # time set: TM?p=%0c%0b%14%16%23%32 (yMDhms) \00+yMDhms
         },
     'AI': {
-        'txt': 'Unkown AI parameter (audio input?)',
+        'txt': 'Audio input(?)',
         'perm': GP_PARAM_WRITE,
         'write_target': 'camera',
         'values': {
-            0: 'Unknown value 0',
+            0: 'Built-in mic',
             1: 'Unknown value 1',
             2: 'Unknown value 2',
             3: 'External mic',
@@ -311,14 +311,24 @@ CAMERA_PARAMETERS = {
             1: 'On',
             },
         },
+    'BM': { # Bluetooth mode?
+        'txt': 'Unknown BT command (bluetooth?)',
+        'perm': GP_PARAM_WRITE,
+        'write_target': 'camera',
+        'values': {
+            0: 'Unknown value 0',
+            1: 'Unknown value 1',
+            2: 'Unknown value 2',
+            },
+        },
+
     #PB...
     #DF... delete file?
     #IF
     #WI -> 0 disables wifi. can be sent to either /bacac or /camera
-    #BM -> 0, 1 or 2  blue booth mode ? can be sent to either /bacac or /camera
-    #PM
+    #PM ->1=peering?
     #BO -> /bacpac 0=off
-    #OO
+    #OO one on one ?
     #BP
     #SP
     #DS 0/1
