@@ -28,6 +28,8 @@ PASSWORD=None
 GP_PARAM_READ  = 1
 GP_PARAM_WRITE = 2
 
+CAM_IP = '10.5.5.9'
+
 CAMERA_PARAMETERS = {
     'CM': {
         'txt': 'Camera mode',
@@ -288,10 +290,11 @@ CAMERA_PARAMETERS = {
         'perm': GP_PARAM_WRITE,
         'write_target': 'camera',
         },
-    'CN': { # Change camera name
-        'txt': 'Unkown CN parameter',
+    'CN': {
+        'txt': 'Camera name', # Built-in is HERO2
         'perm': GP_PARAM_WRITE,
         'write_target': 'camera',
+        'values': str,
         },
     'OB': {
         'txt': 'One button mode',
@@ -358,53 +361,7 @@ CAMERA_PARAMETERS = {
             6: '6 - Protune video',
             },
         },
-    'CN': {
-        'txt': 'Camera name',
-        'perm': GP_PARAM_WRITE,
-        'values': str,
-        },
     }
-
-
-__opener__ = None
-def httpopen(url):
-    global __opener__
-    if __opener__ is None:
-        __opener__ = urllib.request.build_opener()
-    http_response = __opener__.open(url)
-    return http_response
-
-
-try:
-    bcv = httpopen('http://10.5.5.9/bacpac/cv').read()
-    print('bacpac CV:', repr(bcv))
-    bacpac_version = struct.unpack('BBB', bcv[9:12])
-    bacpac_version = '.'.join([str(x) for x in bacpac_version])
-    print('   bacpac version:', bacpac_version)
-    bacpac_mac = bcv[12:18]
-    bacpac_mac = ':'.join(['%02x' % x for x in bacpac_mac])
-    print('bacpac mac:', bacpac_mac)
-    bacpac_name = bcv[19:].decode('utf-8')
-    print('bacpac name:', bacpac_name)
-    
-    bsd = httpopen('http://10.5.5.9/bacpac/sd').read()
-    print('bacpac SD:', repr(bsd))
-    PASSWORD = bsd[2:].decode('utf-8')
-    print('bacpac password', PASSWORD)
- 
-    ccv = httpopen('http://10.5.5.9/camera/cv').read()
-    print('camera CV:', repr(ccv))
-    # b'\x00\x00\x01\x13HD2.08.12.198.47.00\x05HERO2'
-    dlen = struct.unpack('B', ccv[3:4])[0]
-    camera_version = ccv[4:4+dlen].decode('UTF-8')
-    print('camera version', camera_version)
-    ipos = 4+dlen
-    dlen = struct.unpack('B', ccv[ipos:ipos+1])[0]
-    ipos += 1
-    camera_model = ccv[ipos:ipos+dlen].decode('UTF-8')
-    print('camera_model', camera_model)
-except (urllib.error.HTTPError, urllib.error.URLError, socket.error):
-    print('Error communicating with bacpac/camera')
 
 
 def perm_to_text(reg):
@@ -425,9 +382,55 @@ def print_reg(name, value):
         disp_value,
         ))
 
+
+__opener__ = None
+def httpopen(url):
+    global __opener__
+    if __opener__ is None:
+        __opener__ = urllib.request.build_opener()
+    http_response = __opener__.open(url)
+    return http_response
+
+
+def init_cam():
+    global PASSWORD
+    try:
+        bcv = httpopen('http://%s/bacpac/cv' % CAM_IP).read()
+        print('bacpac CV:', repr(bcv))
+        bacpac_version = struct.unpack('BBB', bcv[9:12])
+        bacpac_version = '.'.join([str(x) for x in bacpac_version])
+        print('   bacpac version:', bacpac_version)
+        bacpac_mac = bcv[12:18]
+        bacpac_mac = ':'.join(['%02x' % x for x in bacpac_mac])
+        print('bacpac mac:', bacpac_mac)
+        bacpac_name = bcv[19:].decode('utf-8')
+        print('bacpac name:', bacpac_name)
+        
+        bsd = httpopen('http://%s/bacpac/sd' % CAM_IP).read()
+        print('bacpac SD:', repr(bsd))
+        PASSWORD = bsd[2:].decode('utf-8')
+        print('bacpac password', PASSWORD)
+     
+        ccv = httpopen('http://%s/camera/cv' % CAM_IP).read()
+        print('camera CV:', repr(ccv))
+        # b'\x00\x00\x01\x13HD2.08.12.198.47.00\x05HERO2'
+        dlen = struct.unpack('B', ccv[3:4])[0]
+        camera_version = ccv[4:4+dlen].decode('UTF-8')
+        print('camera version', camera_version)
+        ipos = 4+dlen
+        dlen = struct.unpack('B', ccv[ipos:ipos+1])[0]
+        ipos += 1
+        camera_model = ccv[ipos:ipos+dlen].decode('UTF-8')
+        print('camera_model', camera_model) #FIXME this is the CN parameter
+        return True
+    except (urllib.error.HTTPError, urllib.error.URLError, socket.error):
+        print('Error communicating with bacpac/camera')
+        return False
+
+
 def dump_bacpac():
     try:
-        bse = httpopen('http://10.5.5.9/bacpac/se?t=%s' % PASSWORD).read()
+        bse = httpopen('http://%s/bacpac/se?t=%s' % (CAM_IP, PASSWORD)).read()
     except (urllib.error.HTTPError, urllib.error.URLError, socket.error):
         print ("Can't access bacpac")
         return
@@ -461,7 +464,7 @@ def dump_bacpac():
 
 def dump_camera():
     try:
-        cse = httpopen('http://10.5.5.9/camera/se?t=%s' % PASSWORD).read()
+        cse = httpopen('http://%s/camera/se?t=%s' % (CAM_IP, PASSWORD)).read()
     except (urllib.error.HTTPError, urllib.error.URLError, socket.error):
         print ("Can't access camera")
         return
@@ -532,11 +535,15 @@ def main():
         sys.exit(1)
 
     if args[0] == 'dump':
+        if not init_cam():
+            sys.exit(1)
         dump_bacpac()
         dump_camera()
         return
     
     if args[0] == 'monitor':
+        if not init_cam():
+            sys.exit(1)
         while True:
             dump_bacpac()
             dump_camera()
@@ -544,11 +551,13 @@ def main():
     
     if args[0] == 'list':
         if len(args) == 1:
+            print('Known RR codes:')
             for reg_name in CAMERA_PARAMETERS:
                 reg = CAMERA_PARAMETERS[reg_name]
                 print(perm_to_text(reg), reg_name, reg['txt'])
             print()
-            print('Use list RR to get possible values')
+            print('Note that read-only RR code are heromote specific and not built in your device.')
+            print('Use "list RR" to get possible values.')
         else:
             for reg_name in args[1:]:
                 reg = CAMERA_PARAMETERS[reg_name]
@@ -570,6 +579,10 @@ def main():
                         print('\t', values.__name__)
         return
  
+    if not init_cam():
+        pass
+        #sys.exit(1)
+    #PASSWORD = 'a'
     for arg in args:
         command = arg.split('=', 1)
         if len(command) == 1:
@@ -586,16 +599,31 @@ def main():
                 sys.exit(1)
             target = CAMERA_PARAMETERS[reg_name]['write_target']
 
-        url = 'http://10.5.5.9/' + target + '/'+ reg_name + '?t=' + PASSWORD
-        if value:
+        url = 'http://' + CAM_IP + '/' + target + '/'+ reg_name + '?t=' + PASSWORD
+        param = None
+        if value and reg_name in CAMERA_PARAMETERS and 'values' in CAMERA_PARAMETERS[reg_name]:
+            values = CAMERA_PARAMETERS[reg_name]['values']
+            if values == str:
+                param = chr(len(value)) + value
+        if param is None and value:
             value = int(value)
             assert value < 256
-            url += '&p=%' + '%02x' % value
+            param = chr(value)
+        if param is not None:
+            url += '&p='
+            for c in param:
+                if ord(c) < 32:
+                    url += '%' + '%02x' % ord(c)
+                else:
+                    url += c
         print (url)
 
-        rsp = httpopen(url).read()
-        print ("HTTP response:", rsp)
-        print_reg(reg_name, value)
+        try:
+            rsp = httpopen(url).read()
+            print ("HTTP response:", rsp)
+            print_reg(reg_name, value)
+        except urllib.error.URLError as err:
+            print ('Communication error', err)
 
 
 if __name__ == '__main__':
