@@ -461,6 +461,7 @@ def dump_bacpac():
     #cam off:               6:0 7:0  8:0 9:1 a:0 b:255 c:255 e:0
     #usb mode only, cam on: 6:0 7:0  8:1 9:0 a:1 b:1   c:0   e:0
     #cam fully on:          6:0 7:34 8:1 9:0 a:1 b:1   c:0   e:1
+    #SD error:              6:0 7:0  8:1 9:0 a:1 b:1   c:0   e:0
 
 def dump_camera():
     try:
