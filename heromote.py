@@ -458,10 +458,11 @@ def dump_bacpac():
     print ('r- bpadc:', bpadc)
     print ('r- cam_attached:', bpadd)
     print ('r- bpade:', bpade)
-    #cam off:               6:0 7:0  8:0 9:1 a:0 b:255 c:255 e:0
-    #usb mode only, cam on: 6:0 7:0  8:1 9:0 a:1 b:1   c:0   e:0
-    #cam fully on:          6:0 7:34 8:1 9:0 a:1 b:1   c:0   e:1
-    #SD error:              6:0 7:0  8:1 9:0 a:1 b:1   c:0   e:0
+    #cam off:                     6:0 7:0  8:0 9:1 a:0 b:255 c:255 e:0
+    #usb mode only, cam on:       6:0 7:0  8:1 9:0 a:1 b:1   c:0   e:0
+    #SD error:              5:255 6:0 7:0  8:1 9:0 a:1 b:1   c:0   e:0
+    #SD error:              5:255 6:0 7:34 8:1 9:0 a:1 b:1   c:0   e:1
+    #cam fully on:                6:0 7:34 8:1 9:0 a:1 b:1   c:0   e:1
 
 def dump_camera():
     try:
@@ -496,8 +497,8 @@ def dump_camera():
     print_reg('AO', autooff)
     print_reg('FV', video_fov)
     print_reg('PR', photo_res)
-    print ('r- cpad2 (audio):', cpad2)
     print_reg('VR', video_res)
+    print ('r- cpad2 (audio):', cpad2)
     print_reg('PH', disp_hour)
     print_reg('PM', disp_min)
     print_reg('PS', disp_sec)
@@ -513,7 +514,7 @@ def dump_camera():
     print_reg('US', usb)
     print_reg('BL', battery)
     print_reg('BC', charging)
-    print ('r- cpad8:', cpad8)
+    print ('r- cpad8:', cpad8) # 1 if ready, 0 if USB only, same as bpade ?
     print_reg('RP', remaining_photo)
     print_reg('NP', nphoto)
     print_reg('RV', remaining_video_min)
